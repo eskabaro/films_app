@@ -1,29 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import AddWishlistButton from '@/screens/film/ui/AddWishlistButton'
+import WishlistButton from '@/screens/home/ui/WishlistButton'
+import { debounce } from '@/shared/lib/utils'
+import { setSearchValue, useFilmStore } from '@/shared/state'
+import { Stack } from 'expo-router'
+import { useMemo } from 'react'
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+export default () => {
+    const film = useFilmStore((state) => state.film)
+    const debouncedSetValue = useMemo(() => debounce((text) => setSearchValue(text), 400), [setSearchValue])
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    return (
+        <Stack>
+            <Stack.Screen
+                name='index'
+                options={{
+                    headerTitle: 'Home',
+                    headerRight: () => <WishlistButton />,
+                    headerSearchBarOptions: {
+                        hideWhenScrolling: true,
+                        placeholder: 'Search...',
+                        onChangeText: ({ nativeEvent }) => debouncedSetValue(nativeEvent.text)
+                    }
+                }}
+            />
+            <Stack.Screen name='wishlist' options={{ title: 'Wishlist' }} />
+            <Stack.Screen
+                name='[filmId]'
+                options={{
+                    headerTitle: film?.original_title,
+                    headerRight: () => <AddWishlistButton />
+                }}
+            />
+        </Stack>
+    )
 }
